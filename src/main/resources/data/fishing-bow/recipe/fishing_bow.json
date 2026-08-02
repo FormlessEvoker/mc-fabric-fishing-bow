@@ -1,0 +1,11 @@
+{
+  "type": "minecraft:crafting_shapeless",
+  "ingredients": [
+    "minecraft:fishing_rod",
+    "minecraft:bow"
+  ],
+  "result": {
+    "id": "fishing-bow:fishing_bow",
+    "count": 1
+  }
+}
