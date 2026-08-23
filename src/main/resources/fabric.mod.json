@@ -23,7 +23,6 @@
 		]
 	},
 	"mixins": [
-		"fishing-bow.mixins.json",
 		{
 			"config": "fishing-bow.client.mixins.json",
 			"environment": "client"

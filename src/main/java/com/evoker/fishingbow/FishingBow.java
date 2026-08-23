@@ -9,23 +9,23 @@ import org.slf4j.LoggerFactory;
 
 public class FishingBow implements ModInitializer {
 	public static final String MOD_ID = "fishing-bow";
-
-	// This logger is used to write text to the console and the log file.
-	// It is considered best practice to use your mod id as the logger's name.
-	// That way, it's clear which mod wrote info, warnings, and errors.
 	public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
 
 	@Override
 	public void onInitialize() {
-		// This code runs as soon as Minecraft is in a mod-load-ready state.
-		// However, some things (like resources) may still be uninitialized.
-		// Proceed with mild caution.
-
-		LOGGER.info("Hello Fabric world!");
+		ModEntities.initialize();
 		ModItems.initialize();
 	}
 
 	public static Identifier id(String path) {
 		return Identifier.fromNamespaceAndPath(MOD_ID, path);
+	}
+
+	/**
+	 * Always-on debug logging for the fishing-bow mechanic, kept in place (not stripped after each fix) so
+	 * behavior can be traced across test sessions. Grep {@code run/logs/latest.log} for "[FBDEBUG]".
+	 */
+	public static void debug(String message, Object... args) {
+		LOGGER.info("[FBDEBUG] " + message, args);
 	}
 }
