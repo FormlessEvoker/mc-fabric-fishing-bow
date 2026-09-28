@@ -40,13 +40,11 @@ public final class FishingBowItem extends BowItem {
 
         if (hasActiveArrow) {
             if (!level.isClientSide()) {
-                FishingBowArrow activeArrow = player.getAttached(ModAttachments.ACTIVE_FISHING_BOW_ARROW);
-                boolean canReel = activeArrow != null && !activeArrow.isRemoved() && !activeArrow.isReeling();
-                FishingBow.debug("use(): server-side reel check - activeArrow={}, removed={}, reeling={}, canReel={}",
-                        activeArrow, activeArrow != null && activeArrow.isRemoved(),
-                        activeArrow != null && activeArrow.isReeling(), canReel);
-                if (canReel) {
-                    activeArrow.startReeling();
+                ActiveFishingShot shot = player.getAttached(ModAttachments.ACTIVE_FISHING_SHOT);
+                FishingBow.debug("event=shot_reel_requested shotId={} player={} state={} canReel={}",
+                        shot == null ? -1 : shot.shotId(), player.getScoreboardName(),
+                        shot == null ? "NONE" : shot.state(), shot != null && shot.canReel());
+                if (shot != null && shot.startReeling()) {
                     player.getItemInHand(hand).hurtAndBreak(1, player, hand);
                     level.playSound(null, player.getX(), player.getY(), player.getZ(),
                             SoundEvents.FISHING_BOBBER_RETRIEVE, SoundSource.PLAYERS, 1.0F, 1.0F);
@@ -68,14 +66,14 @@ public final class FishingBowItem extends BowItem {
             return false;
         }
 
-        if (player.getAttached(ModAttachments.ACTIVE_FISHING_BOW_ARROW) != null) {
+        if (!level.isClientSide() && player.getAttached(ModAttachments.ACTIVE_FISHING_SHOT) != null) {
             // Already have an arrow out - reeling (via use()) is required before firing again.
             return false;
         }
 
         int ticksHeld = getUseDuration(stack, entity) - timeCharged;
         float power = BowItem.getPowerForTime(ticksHeld);
-        if (power < 0.1F) {
+        if (power < FishingBowConfig.minimumDrawPower) {
             return false;
         }
 
@@ -90,15 +88,11 @@ public final class FishingBowItem extends BowItem {
         if (level instanceof ServerLevel) {
             FishingBowArrow arrow = new FishingBowArrow(level, player, stack);
             arrow.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
-            arrow.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F, power * 3.0F, 1.0F);
+            arrow.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F,
+                    power * FishingBowConfig.projectileSpeedMultiplier, 1.0F);
             level.addFreshEntity(arrow);
-
-            player.setAttached(ModAttachments.ACTIVE_FISHING_BOW_ARROW, arrow);
-
-            FishingBow.debug(
-                    "releaseUsing(): fired arrow id={}, player={}, HAS_ACTIVE_ARROW now readsBack={}",
-                    arrow.getId(), player.getScoreboardName(),
-                    player.getAttached(ModAttachments.HAS_ACTIVE_ARROW));
+            player.setAttached(ModAttachments.ACTIVE_FISHING_SHOT,
+                    new ActiveFishingShot(player, arrow, stack, player.getUsedItemHand()));
 
             level.playSound(null, player.getX(), player.getY(), player.getZ(),
                     SoundEvents.ARROW_SHOOT, SoundSource.PLAYERS, 1.0F,

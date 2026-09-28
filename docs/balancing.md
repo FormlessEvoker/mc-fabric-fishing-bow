@@ -1,6 +1,6 @@
 # Balancing: Fishing Bow
 
-This documents the balance decisions behind the Fishing Bow's fire/hook/reel loop, and the reasoning behind them.
+This documents the Fishing Bow's current fire/hook/reel balance and the reasoning behind it.
 See the main [README](../README.md) for what the item does, and [`reeling-mechanic.md`](reeling-mechanic.md) for how
 the mechanism itself works.
 
@@ -15,12 +15,11 @@ the mechanism itself works.
 
 ## Ammo
 
-Firing requires **no arrow item** in the inventory at all — closer to how the current fishing rod casts freely than
+Firing requires **no arrow item** in the inventory at all — closer to how a fishing rod casts freely than
 to how a vanilla bow checks for ammo. This is the main "free lunch" the rest of the balancing has to account for.
 
-Only one Fishing Bow arrow can be in flight (or stuck, waiting to be reeled in) per player at a time — mirrors how
-`Player.fishing` only tracks a single active `FishingHook`. You can't fire again until the current arrow is reeled
-back in.
+Only one shot can be active per player at a time. During a creature hook, that shot has no physical arrow, but the
+bow still cannot fire again until the shot is reeled in or cleared.
 
 ## Durability
 
@@ -31,13 +30,17 @@ spends durability on **both ends of the cycle**:
 - **1 durability to reel in** — always, even on an "empty" reel where nothing got hooked and the arrow is just
   flying back. Reasoning: you're still winching back a physical line and arrow either way, and a real arrow
   wouldn't survive that trip for free.
+- **1 additional durability if the line breaks at the distance limit** — this replaces the reel cost for that shot.
 
 Net effect: a full fire-and-reel cycle costs 2 durability, so the Fishing Bow burns through its durability bar
 twice as fast as an equivalent normal bow for the same number of shots. At 64 durability, that's 32 full cycles.
 
-Note this is exactly 2 durability per cycle regardless of how many times the underlying arrow *entity* gets replaced
-along the way (see [`reeling-mechanic.md`](reeling-mechanic.md) for why a hit almost always spawns a fresh arrow
-under the hood) — replacement is an implementation detail invisible to the player's durability cost.
+This remains exactly 2 durability per completed fire-and-reel cycle even when a creature hit removes the outgoing
+arrow and the reel creates a returning arrow. Those entity transitions do not cost durability.
+
+The line breaks when its arrow or hook moves more than 48 blocks from the shooter by default. `maxLineDistance`
+in `config/fishing-bow.properties` can set the limit from 1 to 96 blocks. The client renders the arrow and line
+until 16 blocks beyond the configured limit so visuals remain present until the server clears the shot.
 
 ## Damage
 
@@ -50,8 +53,7 @@ damage    = ceil(velocity × baseDamage)
 ```
 
 A vanilla, unenchanted arrow uses `baseDamage = 2.0`, giving 1 damage on a bare tap up to 6 damage at full draw
-(6-10 with the random critical-hit bonus that only applies at a full 1.0 draw). Full source-verified against the
-decompiled 26.2 `BowItem`/`AbstractArrow` classes.
+(6-10 with the random critical-hit bonus that only applies at a full 1.0 draw).
 
 **Fishing Bow uses `baseDamage = 1.05`, with critical hits disabled** (flat, predictable damage — no randomness).
 This value was solved for two specific thresholds rather than picked arbitrarily:
@@ -85,9 +87,7 @@ coupled to each other and to everything above them — we can't tune one HP tier
 the rest without switching to a custom step function instead of the vanilla formula. Revisit if a third precise
 threshold is ever needed.
 
-## Deferred
+## Enchantments
 
-- **Enchantment interactions** (Power, Infinity, Punch, Flame, Mending, etc.) are intentionally not addressed yet.
-  Several of them interact awkwardly with the reel-in mechanic (e.g. Infinity implies unlimited free arrows, which
-  this item already grants by default; Punch's knockback fights against pulling a hooked target toward the
-  player). To be revisited once the core fire/hook/reel loop is implemented and balanced on its own.
+The mod does not define special behavior for Power, Infinity, Punch, Flame, Mending, or other enchantments. The
+current damage and durability figures describe the unenchanted bow.
