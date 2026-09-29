@@ -14,7 +14,7 @@ public class ModItems {
     public static final Item FISHING_BOW = register(
             ModItemIds.FISHING_BOW,
             FishingBowItem::new,
-            new Item.Properties().durability(64)
+            new Item.Properties().durability(FishingBowConfig.bowDurability)
     );
 
     private ModItems() {
