@@ -15,10 +15,11 @@ The Fishing Bow has one active shot per player. Right-click starts drawing when 
 
 The hook anchor is an entity, but it is not an arrow projectile and does not deal damage or collide with targets.
 
-Every server tick, the shot compares the shooter's position with its current arrow or hook anchor. If the distance
-exceeds `maxLineDistance` (48 blocks by default), it discards the arrow or hook, clears the active-shot flag, and
-charges one additional durability to the bow that fired it. This applies during flight, while waiting at a hit,
-and during return. A hooked creature and captured drops remain in the world where they are.
+Every server tick, the shot compares the shooter's eye position with its current arrow or hook anchor. If the
+distance exceeds `maxLineDistance` (48 blocks by default), or the shooter is in a different dimension from the arrow
+or hook, it discards the arrow or hook and clears the active-shot flag. This applies during flight, while waiting
+at a hit, and during return. Before reeling, the break charges one additional durability to the bow that fired it;
+during return the reel durability has already been charged, so the break costs nothing extra. A hooked creature and captured drops remain in the world where they are.
 
 ## Shot states
 

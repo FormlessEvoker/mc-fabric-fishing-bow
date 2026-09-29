@@ -49,7 +49,7 @@ public final class FishingBowHookRenderer extends EntityRenderer<FishingBowHook,
         state.ownerHandOffset = null;
         Entity owner = hook.level().getEntity(hook.ownerId());
         if (owner instanceof Player player) {
-            state.ownerHandOffset = FishingLineRenderer.handPosition(player, partialTick).subtract(anchor);
+            state.ownerHandOffset = FishingLineRenderer.handPosition(player, hook.firingHand(), partialTick).subtract(anchor);
         }
         state.arrowYaw = livingTarget != null ? hook.getYRot() + targetModelYaw : hook.getYRot();
         state.arrowPitch = hook.getXRot();

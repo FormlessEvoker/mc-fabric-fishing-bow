@@ -39,7 +39,7 @@ This remains exactly 2 durability per completed fire-and-reel cycle even when a 
 arrow and the reel creates a returning arrow. Those entity transitions do not cost durability.
 
 The line breaks when its arrow or hook moves more than 48 blocks from the shooter by default. `maxLineDistance`
-in `config/fishing-bow.properties` can set the limit from 1 to 96 blocks. The client renders the arrow and line
+in `config/fishing-bow.properties` can set the limit from 4 to 96 blocks. Changing dimensions with an active shot counts as exceeding the limit. The client renders the arrow and line
 until 16 blocks beyond the configured limit so visuals remain present until the server clears the shot.
 
 ## Damage

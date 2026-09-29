@@ -74,6 +74,16 @@ public final class FishingBowItem extends BowItem {
         int ticksHeld = getUseDuration(stack, entity) - timeCharged;
         float power = BowItem.getPowerForTime(ticksHeld);
         if (power < FishingBowConfig.minimumDrawPower) {
+            if (!level.isClientSide()) {
+                // The client predicts fires with its own minimumDrawPower. If that is lower than the server's, the
+                // client has already set HAS_ACTIVE_ARROW for a shot that never happened, and every later
+                // right-click would be spent as a reel. Push an explicit false to undo that prediction. Remove
+                // first so the write is a real change even though the server's own value is already false.
+                FishingBow.debug("releaseUsing(): server rejected draw power={} min={}, resyncing flag, player={}",
+                        power, FishingBowConfig.minimumDrawPower, player.getScoreboardName());
+                player.removeAttached(ModAttachments.HAS_ACTIVE_ARROW);
+                player.setAttached(ModAttachments.HAS_ACTIVE_ARROW, false);
+            }
             return false;
         }
 
@@ -86,7 +96,7 @@ public final class FishingBowItem extends BowItem {
         player.setAttached(ModAttachments.HAS_ACTIVE_ARROW, true);
 
         if (level instanceof ServerLevel) {
-            FishingBowArrow arrow = new FishingBowArrow(level, player, stack);
+            FishingBowArrow arrow = new FishingBowArrow(level, player, stack, player.getUsedItemHand());
             arrow.setPos(player.getX(), player.getEyeY() - 0.1, player.getZ());
             arrow.shootFromRotation(player, player.getXRot(), player.getYRot(), 0.0F,
                     power * FishingBowConfig.projectileSpeedMultiplier, 1.0F);

@@ -13,6 +13,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
 import net.minecraft.world.entity.LivingEntity;
@@ -29,22 +30,30 @@ import net.minecraft.world.phys.Vec3;
 /** Projectile used only for the outbound and return flights, and for an embedded block hit. */
 public final class FishingBowArrow extends AbstractArrow {
     private static final EntityDataAccessor<Float> MAX_LINE_DISTANCE = SynchedEntityData.defineId(FishingBowArrow.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> OFF_HAND = SynchedEntityData.defineId(FishingBowArrow.class, EntityDataSerializers.BOOLEAN);
     private boolean processingHit;
     private boolean returning;
 
     public FishingBowArrow(EntityType<? extends FishingBowArrow> type, Level level) { super(type, level); }
 
-    public FishingBowArrow(Level level, LivingEntity owner, @Nullable ItemStack weapon) {
+    public FishingBowArrow(Level level, LivingEntity owner, @Nullable ItemStack weapon, InteractionHand firingHand) {
         super(ModEntities.FISHING_BOW_ARROW, owner, level, ItemStack.EMPTY, weapon);
         setBaseDamage(FishingBowConfig.arrowBaseDamage);
         setCritArrow(false);
         pickup = Pickup.DISALLOWED;
         entityData.set(MAX_LINE_DISTANCE, FishingBowConfig.maxLineDistance);
+        entityData.set(OFF_HAND, firingHand == InteractionHand.OFF_HAND);
     }
 
     @Override protected void defineSynchedData(SynchedEntityData.Builder builder) {
         super.defineSynchedData(builder);
         builder.define(MAX_LINE_DISTANCE, FishingBowConfig.maxLineDistance);
+        builder.define(OFF_HAND, false);
+    }
+
+    /** The hand that fired this shot, synced so the client draws the line from that arm. */
+    public InteractionHand firingHand() {
+        return entityData.get(OFF_HAND) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
     }
 
     @Override public boolean shouldRenderAtSqrDistance(double distanceSq) {

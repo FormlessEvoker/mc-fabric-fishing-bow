@@ -6,6 +6,7 @@ import net.minecraft.network.syncher.EntityDataAccessor;
 import net.minecraft.network.syncher.EntityDataSerializers;
 import net.minecraft.network.syncher.SynchedEntityData;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.damagesource.DamageSource;
 import net.minecraft.world.entity.Entity;
 import net.minecraft.world.entity.EntityType;
@@ -29,17 +30,19 @@ public final class FishingBowHook extends Entity {
     private static final EntityDataAccessor<Integer> TARGET = SynchedEntityData.defineId(FishingBowHook.class, EntityDataSerializers.INT);
     private static final EntityDataAccessor<Vector3fc> OFFSET = SynchedEntityData.defineId(FishingBowHook.class, EntityDataSerializers.VECTOR3);
     private static final EntityDataAccessor<Float> MAX_LINE_DISTANCE = SynchedEntityData.defineId(FishingBowHook.class, EntityDataSerializers.FLOAT);
+    private static final EntityDataAccessor<Boolean> OFF_HAND = SynchedEntityData.defineId(FishingBowHook.class, EntityDataSerializers.BOOLEAN);
     private boolean falling;
     private double fallSpeed;
 
     public FishingBowHook(EntityType<? extends FishingBowHook> type, Level level) { super(type, level); }
 
-    public FishingBowHook(ServerLevel level, Player owner, LivingEntity target, Vec3 impact,
-                          float yaw, float pitch, boolean fallAtImpact) {
+    public FishingBowHook(ServerLevel level, Player owner, InteractionHand firingHand, LivingEntity target,
+                          Vec3 impact, float yaw, float pitch, boolean fallAtImpact) {
         this(ModEntities.FISHING_BOW_HOOK, level);
         entityData.set(OWNER, owner.getId());
         entityData.set(TARGET, target == null ? -1 : target.getId());
         entityData.set(MAX_LINE_DISTANCE, FishingBowConfig.maxLineDistance);
+        entityData.set(OFF_HAND, firingHand == InteractionHand.OFF_HAND);
         if (target != null) {
             float modelYaw = modelYaw(target.getPreciseBodyRotation(1.0F));
             Vec3 local = impact.subtract(target.position())
@@ -59,12 +62,16 @@ public final class FishingBowHook extends Entity {
         builder.define(TARGET, -1);
         builder.define(OFFSET, new Vector3f());
         builder.define(MAX_LINE_DISTANCE, FishingBowConfig.maxLineDistance);
+        builder.define(OFF_HAND, false);
     }
 
     public int ownerId() { return entityData.get(OWNER); }
     public int targetId() { return entityData.get(TARGET); }
     public Vec3 localOffset() { return new Vec3(entityData.get(OFFSET)); }
     public float maxLineDistance() { return entityData.get(MAX_LINE_DISTANCE); }
+    public InteractionHand firingHand() {
+        return entityData.get(OFF_HAND) ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+    }
 
     @Override public boolean shouldRenderAtSqrDistance(double distanceSq) {
         double range = maxLineDistance() + FishingBowConfig.LINE_RENDER_MARGIN;

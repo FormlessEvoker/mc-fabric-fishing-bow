@@ -13,7 +13,8 @@ you reel back in like a fishing line, instead of losing it downrange.
 - **Right-click to draw and fire, right-click again to reel** — only one shot can be active per player. A curved line
   renders from the shooter's hand to the arrow or hook anchor while the shot is active.
 - **48-block line limit by default** — if the arrow or hook moves farther from the shooter, the shot breaks and the
-  bow can fire again. The limit is configurable with `maxLineDistance` in `config/fishing-bow.properties` (1–96 blocks).
+  bow can fire again. The limit is configurable with `maxLineDistance` in `config/fishing-bow.properties` (4–96 blocks).
+  Changing dimensions with an active shot breaks the line the same way.
 - **64 durability**, crafted from vanilla materials. Costs 1 durability to fire and 1 more to reel — every full
   cycle costs 2, even an "empty" reel that hooked nothing. Breaking the line costs 1 additional durability instead
   of the reel cost.

@@ -77,7 +77,7 @@ public final class ActiveFishingShot {
 
         items.addAll(newItems);
         creature = target instanceof LivingEntity living && living.isAlive() ? living : null;
-        hook = new FishingBowHook(level, owner, creature, impact, hitArrow.getYRot(), hitArrow.getXRot(),
+        hook = new FishingBowHook(level, owner, firingHand, creature, impact, hitArrow.getYRot(), hitArrow.getXRot(),
                 target instanceof LivingEntity && creature == null);
         level.addFreshEntity(hook);
         State nextState = creature == null ? State.AT_IMPACT : State.HOOKED_CREATURE;
@@ -98,13 +98,17 @@ public final class ActiveFishingShot {
 
     public boolean startReeling() {
         if (!canReel() || !(owner.level() instanceof ServerLevel level)) return false;
+        if (lineLeftOwnerLevel()) {
+            breakLine("line_broken_level_change");
+            return false;
+        }
         if (state == State.HOOKED_CREATURE || state == State.AT_IMPACT) {
             if (hook == null || hook.isRemoved()) {
                 finish("hook_missing_before_reel");
                 return false;
             }
             Vec3 start = hook.anchorPosition();
-            arrow = new FishingBowArrow(level, owner, null);
+            arrow = new FishingBowArrow(level, owner, null, firingHand);
             arrow.setPos(start);
             arrow.setYRot(hook.worldYaw());
             arrow.setXRot(hook.getXRot());
@@ -124,17 +128,21 @@ public final class ActiveFishingShot {
 
     public void tick() {
         if (!owner.isAlive() || owner.isRemoved()) { finish("owner_unavailable"); return; }
+        if (lineLeftOwnerLevel()) {
+            breakLine("line_broken_level_change");
+            return;
+        }
         Vec3 lineEnd = arrow != null && !arrow.isRemoved() ? arrow.position()
                 : hook != null && !hook.isRemoved() ? hook.anchorPosition() : null;
         if (lineEnd != null) {
-            double distanceSq = owner.position().distanceToSqr(lineEnd);
+            // Measure from the eyes: the arrow spawns just below eye height and the line starts at the hand.
+            double distanceSq = owner.getEyePosition().distanceToSqr(lineEnd);
             if (distanceSq > maxLineDistance * maxLineDistance) {
                 FishingBow.debug("event=shot_line_broken shotId={} player={} state={} distance={} maxDistance={} "
                                 + "arrowId={} hookId={}",
                         shotId, owner.getScoreboardName(), state, Math.sqrt(distanceSq), maxLineDistance,
                         arrow == null ? -1 : arrow.getId(), hook == null ? -1 : hook.getId());
-                finish("line_broken_distance");
-                firingBow.hurtAndBreak(1, owner, firingHand);
+                breakLine("line_broken_distance");
                 return;
             }
         }
@@ -192,6 +200,25 @@ public final class ActiveFishingShot {
                 .add(delta.scale(FishingBowConfig.pullStrength / distance)));
         entity.hurtMarked = true;
         return false;
+    }
+
+    /** A dimension change breaks the line exactly like exceeding {@code maxLineDistance}. */
+    private boolean lineLeftOwnerLevel() {
+        Entity lineEnd = arrow != null && !arrow.isRemoved() ? arrow
+                : hook != null && !hook.isRemoved() ? hook : null;
+        if (lineEnd == null || lineEnd.level() == owner.level()) return false;
+        FishingBow.debug("event=shot_line_broken shotId={} player={} state={} reason=level_change "
+                        + "ownerLevel={} lineLevel={} arrowId={} hookId={}",
+                shotId, owner.getScoreboardName(), state, owner.level().dimension(), lineEnd.level().dimension(),
+                arrow == null ? -1 : arrow.getId(), hook == null ? -1 : hook.getId());
+        return true;
+    }
+
+    /** The break cost replaces the reel cost, so a line that breaks while returning costs nothing extra. */
+    private void breakLine(String reason) {
+        boolean charge = state != State.RETURNING;
+        finish(reason);
+        if (charge) firingBow.hurtAndBreak(1, owner, firingHand);
     }
 
     private void changeState(State nextState) {

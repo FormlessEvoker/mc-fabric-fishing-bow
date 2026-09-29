@@ -41,7 +41,7 @@ public class FishingBowArrowRenderer extends ArrowRenderer<FishingBowArrow, Fish
         state.ownerHandOffset = null;
         if (entity.getOwner() instanceof Player owner) {
             Vec3 arrowPos = entity.getPosition(partialTick);
-            Vec3 handPos = FishingLineRenderer.handPosition(owner, partialTick);
+            Vec3 handPos = FishingLineRenderer.handPosition(owner, entity.firingHand(), partialTick);
             state.ownerHandOffset = handPos.subtract(arrowPos);
         }
     }

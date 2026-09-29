@@ -6,7 +6,7 @@ Use this guide to check the current [fire, hook, and reel mechanic](reeling-mech
 
 Use a survival-mode test world, a fresh Fishing Bow, a solid block, a sturdy living target, a small creature that can die from one shot, and an item frame or painting. Leave room to watch the returning arrow. Repeat visual checks in first and third person. For every case, note the line during flight, waiting, and return; the visible arrow count; what is pulled; durability used; and whether the bow can fire again after return.
 
-A successful fire uses one durability. Starting a valid reel uses one more. Exceeding `maxLineDistance` (48 blocks by default) breaks the line and costs one additional durability instead of the reel cost. Entity hits and state transfers have no separate cost. A shot remains active until its returning arrow and captured targets arrive, up to 80 ticks after the arrow returns, or the shot is cleared. For unexpected behavior, inspect `[FBDEBUG]` lines in `run/logs/latest.log` near the shot. The logs show server transitions; rendering still needs direct observation.
+A successful fire uses one durability. Starting a valid reel uses one more. Exceeding `maxLineDistance` (48 blocks by default) breaks the line and costs one additional durability instead of the reel cost; a break during return costs nothing extra. Changing dimensions with an active shot counts as a distance break. Entity hits and state transfers have no separate cost. A shot remains active until its returning arrow and captured targets arrive, up to 80 ticks after the arrow returns, or the shot is cleared. For unexpected behavior, inspect `[FBDEBUG]` lines in `run/logs/latest.log` near the shot. The logs show server transitions; rendering still needs direct observation.
 
 ## Hit scenarios
 
@@ -36,5 +36,7 @@ The item check compares nearby item entity IDs immediately before and after hit 
 | Two players | Have player A fire and reel while player B watches nearby, then reverse roles. | Both clients render the same shot anchor and the correct shooter's hand as the line origin. Only the owner controls the reel. |
 | Repeated cycles | Alternate miss, block, creature, and nonliving entity shots. | Each completed return restores the ability to draw. No old line, arrow, hook, or captured-item reference remains in the next cycle. |
 | Distance break | Fire or hook a target, then move more than `maxLineDistance` from the arrow or hook. | The arrow and line disappear, the original bow takes one additional durability, and another shot can be fired. Check that the visuals remain visible until the break. |
+| Dimension break | Fire or hook a target, then enter a Nether portal before reeling. Repeat while the arrow is returning. | Same result as a distance break. Before reeling, the bow takes one additional durability; during return, no extra durability is taken. |
+| Off-hand line | Hold a Fishing Bow in each hand, fire from the off hand, then swap held items while the shot is out. | The line starts from the off-hand arm and stays there through hook and return. |
 
 A short third-person recording is useful for checking whether the arrow and line endpoint move together during creature movement and the transition to reeling.

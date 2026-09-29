@@ -32,8 +32,11 @@ public class FishingBow implements ModInitializer {
 		return Identifier.fromNamespaceAndPath(MOD_ID, path);
 	}
 
-	/** Sends diagnostic details to the mod's conventional DEBUG logger category. */
+	/**
+	 * Persistent diagnostic logging for playtesting: INFO level with a grep-able {@code [FBDEBUG]} prefix in
+	 * {@code run/logs/latest.log}. Keep calls at key decision points; avoid per-frame call sites.
+	 */
 	public static void debug(String message, Object... args) {
-		LOGGER.debug(message, args);
+		LOGGER.info("[FBDEBUG] " + message, args);
 	}
 }

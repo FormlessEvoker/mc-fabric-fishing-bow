@@ -30,6 +30,10 @@ public final class FishingBowConfig {
     public static double arrowBaseDamage = DEFAULT_ARROW_BASE_DAMAGE;
     public static double itemCaptureRadius = DEFAULT_ITEM_CAPTURE_RADIUS;
     public static float projectileSpeedMultiplier = DEFAULT_PROJECTILE_SPEED_MULTIPLIER;
+    /**
+     * Should match between client and server: the client predicts fires with its own value. A lower client value is
+     * reconciled by the server, but a mismatch still causes a brief wrong prediction.
+     */
     public static float minimumDrawPower = DEFAULT_MINIMUM_DRAW_POWER;
     /** Must match between client and server because the bow item is registered with this value. */
     public static int bowDurability = DEFAULT_BOW_DURABILITY;
@@ -65,8 +69,9 @@ public final class FishingBowConfig {
 
         arrivalDistance = readDouble(properties, "arrivalDistance", DEFAULT_ARRIVAL_DISTANCE,
                 0.000001, Double.MAX_VALUE);
+        // Must be positive: startReturning() zeroes the arrow's velocity, so zero pull never brings it back.
         pullStrength = readDouble(properties, "pullStrength", DEFAULT_PULL_STRENGTH,
-                0.0, Double.MAX_VALUE);
+                0.01, Double.MAX_VALUE);
         drag = readDouble(properties, "drag", DEFAULT_DRAG, 0.0, 1.0);
         arrowBaseDamage = readDouble(properties, "arrowBaseDamage", DEFAULT_ARROW_BASE_DAMAGE,
                 0.0, Double.MAX_VALUE);
@@ -79,7 +84,7 @@ public final class FishingBowConfig {
         bowDurability = readInt(properties, "bowDurability", DEFAULT_BOW_DURABILITY,
                 1, Integer.MAX_VALUE);
         maxLineDistance = readFloat(properties, "maxLineDistance", DEFAULT_MAX_LINE_DISTANCE,
-                1.0F, 96.0F);
+                4.0F, 96.0F);
         FishingBow.LOGGER.info("Fishing Bow gameplay config loaded from {}", configFile);
     }
 

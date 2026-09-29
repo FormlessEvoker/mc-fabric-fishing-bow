@@ -5,10 +5,10 @@ import com.mojang.blaze3d.vertex.VertexConsumer;
 import net.minecraft.client.Minecraft;
 import net.minecraft.client.renderer.SubmitNodeCollector;
 import net.minecraft.client.renderer.rendertype.RenderTypes;
+import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
-import com.evoker.fishingbow.ModItems;
 
 /** Shared line geometry for physical arrows and arrowless hook anchors. */
 final class FishingLineRenderer {
@@ -16,8 +16,9 @@ final class FishingLineRenderer {
 
     private FishingLineRenderer() { }
 
-    static Vec3 handPosition(Player player, float partialTick) {
-        HumanoidArm arm = player.getMainHandItem().is(ModItems.FISHING_BOW)
+    /** Uses the hand that fired the shot, not whatever the player currently holds. */
+    static Vec3 handPosition(Player player, InteractionHand firingHand, float partialTick) {
+        HumanoidArm arm = firingHand == InteractionHand.MAIN_HAND
                 ? player.getMainArm() : player.getMainArm().getOpposite();
         int side = arm == HumanoidArm.RIGHT ? 1 : -1;
         Minecraft minecraft = Minecraft.getInstance();
