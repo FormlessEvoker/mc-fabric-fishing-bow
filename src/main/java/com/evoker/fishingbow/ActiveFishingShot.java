@@ -207,16 +207,29 @@ public final class ActiveFishingShot {
         return false;
     }
 
-    /** A dimension change breaks the line exactly like exceeding {@code maxLineDistance}. */
+    /**
+     * A dimension change breaks the line exactly like exceeding {@code maxLineDistance}. During return
+     * follow-through there is no arrow or hook left, so the remaining catches are checked instead; otherwise they
+     * would keep being pulled toward the owner's coordinates from the wrong level.
+     */
     private boolean lineLeftOwnerLevel() {
         Entity lineEnd = arrow != null && !arrow.isRemoved() ? arrow
                 : hook != null && !hook.isRemoved() ? hook : null;
+        if (lineEnd == null && state == State.RETURNING) lineEnd = catchInOtherLevel();
         if (lineEnd == null || lineEnd.level() == owner.level()) return false;
         FishingBow.debug("event=shot_line_broken shotId={} player={} state={} reason=level_change "
-                        + "ownerLevel={} lineLevel={} arrowId={} hookId={}",
+                        + "ownerLevel={} lineLevel={} arrowId={} hookId={} lineEntityId={}",
                 shotId, owner.getScoreboardName(), state, owner.level().dimension(), lineEnd.level().dimension(),
-                arrow == null ? -1 : arrow.getId(), hook == null ? -1 : hook.getId());
+                arrow == null ? -1 : arrow.getId(), hook == null ? -1 : hook.getId(), lineEnd.getId());
         return true;
+    }
+
+    private Entity catchInOtherLevel() {
+        if (creature != null && creature.isAlive() && creature.level() != owner.level()) return creature;
+        for (ItemEntity item : items) {
+            if (item.isAlive() && item.level() != owner.level()) return item;
+        }
+        return null;
     }
 
     /** The break cost replaces the reel cost, so a line that breaks while returning costs nothing extra. */

@@ -18,7 +18,9 @@ The hook anchor is an entity, but it is not an arrow projectile and does not dea
 Every server tick, the shot compares the shooter's eye position with its current arrow or hook anchor. If the
 distance exceeds `maxLineDistance` (48 blocks by default), or the shooter is in a different dimension from the arrow
 or hook, it discards the arrow or hook and clears the active-shot flag. This applies during flight, while waiting
-at a hit, and during return. Before reeling, the break charges one additional durability to the bow that fired it;
+at a hit, and during return. After the returning arrow arrives, a dimension change also breaks the shot if any catch
+still being pulled is in a different dimension from the shooter; the catches stop being pulled and keep their
+current momentum. Before reeling, the break charges one additional durability to the bow that fired it;
 during return the reel durability has already been charged, so the break costs nothing extra. A hooked creature and captured drops remain in the world where they are.
 
 ## Shot states
