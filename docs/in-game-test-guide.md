@@ -37,6 +37,7 @@ The item check compares nearby item entity IDs immediately before and after hit 
 | Repeated cycles | Alternate miss, block, creature, and nonliving entity shots. | Each completed return restores the ability to draw. No old line, arrow, hook, or captured-item reference remains in the next cycle. |
 | Distance break | Fire or hook a target, then move more than `maxLineDistance` from the arrow or hook. | The arrow and line disappear, the original bow takes one additional durability, and another shot can be fired. Check that the visuals remain visible until the break. |
 | Dimension break | Fire or hook a target, then enter a Nether portal before reeling. Repeat while the arrow is returning. | Same result as a distance break. Before reeling, the bow takes one additional durability; during return, no extra durability is taken. |
-| Off-hand line | Hold a Fishing Bow in each hand, fire from the off hand, then swap held items while the shot is out. | The line starts from the off-hand arm and stays there through hook and return. |
+| Off-hand line | Hold a Fishing Bow in each hand and fire from the off hand. | The line starts from the off-hand arm and stays there through hook and return. |
+| Hand switch | With a single Fishing Bow, fire, then move the bow to the other hand while the shot is out. Then move it into the inventory. | The line follows the bow to the other arm, and returns to the firing arm once no hand holds a bow. Compare the line's distance from the bow in each hand, in first and third person. |
 
 A short third-person recording is useful for checking whether the arrow and line endpoint move together during creature movement and the transition to reeling.

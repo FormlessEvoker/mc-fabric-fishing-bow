@@ -9,6 +9,7 @@ import net.minecraft.world.InteractionHand;
 import net.minecraft.world.entity.HumanoidArm;
 import net.minecraft.world.entity.player.Player;
 import net.minecraft.world.phys.Vec3;
+import com.evoker.fishingbow.ModItems;
 
 /** Shared line geometry for physical arrows and arrowless hook anchors. */
 final class FishingLineRenderer {
@@ -16,16 +17,30 @@ final class FishingLineRenderer {
 
     private FishingLineRenderer() { }
 
-    /** Uses the hand that fired the shot, not whatever the player currently holds. */
+    /**
+     * Follows the bow if it moves to the other hand. The firing hand wins while it still holds a Fishing Bow (so a
+     * bow in each hand keeps the line on the shooting arm) and is the fallback once no hand holds one.
+     */
+    static InteractionHand lineHand(Player player, InteractionHand firingHand) {
+        InteractionHand otherHand = firingHand == InteractionHand.MAIN_HAND
+                ? InteractionHand.OFF_HAND : InteractionHand.MAIN_HAND;
+        if (!player.getItemInHand(firingHand).is(ModItems.FISHING_BOW)
+                && player.getItemInHand(otherHand).is(ModItems.FISHING_BOW)) {
+            return otherHand;
+        }
+        return firingHand;
+    }
+
     static Vec3 handPosition(Player player, InteractionHand firingHand, float partialTick) {
-        HumanoidArm arm = firingHand == InteractionHand.MAIN_HAND
+        HumanoidArm arm = lineHand(player, firingHand) == InteractionHand.MAIN_HAND
                 ? player.getMainArm() : player.getMainArm().getOpposite();
         int side = arm == HumanoidArm.RIGHT ? 1 : -1;
         Minecraft minecraft = Minecraft.getInstance();
         if (minecraft.player == player && minecraft.options.getCameraType().isFirstPerson()) {
             float fov = minecraft.options.fov().get();
             Vec3 nearHand = minecraft.getEntityRenderDispatcher().camera.getNearPlane(fov)
-                    .getPointOnPlane(side * 0.525F + FishingBowClientConfig.firstPersonLineHorizontalOffset,
+                    // Mirror the tuning offset with the arm so both hands move the same way relative to the bow.
+                    .getPointOnPlane(side * (0.525F + FishingBowClientConfig.firstPersonLineHorizontalOffset),
                             -0.1F + FishingBowClientConfig.firstPersonLineVerticalOffset)
                     .scale(960.0 / fov);
             return player.getEyePosition(partialTick).add(nearHand);

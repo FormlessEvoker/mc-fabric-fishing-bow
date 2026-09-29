@@ -18,7 +18,7 @@ This attachment follows movement and body turns. It does not attach to individua
 
 ## Line geometry
 
-`FishingLineRenderer` estimates the bow user's hand position from the camera near plane in first person and from body rotation, scale, and crouch state in third person. The line is submitted using `RenderTypes.lines()` with a color, normal, and width on every vertex.
+The line starts at the hand that holds the Fishing Bow. The hand that fired the shot wins while it still holds one; if the bow moves to the other hand, the line follows it; if neither hand holds one, the firing hand is used. `FishingLineRenderer` estimates that hand's position from the camera near plane in first person and from body rotation, scale, and crouch state in third person. The line is submitted using `RenderTypes.lines()` with a color, normal, and width on every vertex.
 
 The first-person endpoint can be tuned in `config/fishing-bow-client.properties`:
 
@@ -27,7 +27,7 @@ firstPersonLineHorizontalOffset=0.0
 firstPersonLineVerticalOffset=0.0
 ```
 
-These values are added to the current camera-plane position. Positive horizontal values move the line toward the right side of the screen; negative vertical values move it downward. Try increments of `0.025`. The settings load at client startup, so restart the client after each change. An existing config file may not list the new keys; add them manually. Third-person hand placement is unchanged.
+These values are added to the current camera-plane position. The horizontal value is mirrored with the arm holding the bow: positive values move the line outward, away from the center of the screen, for either hand; negative vertical values move it downward. Try increments of `0.025`. The settings load at client startup, so restart the client after each change. An existing config file may not list the new keys; add them manually. Third-person hand placement is unchanged.
 
 The line's appearance is controlled by these values:
 
