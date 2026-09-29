@@ -60,6 +60,15 @@ Design/balance and mechanism docs that don't belong in this README live under [`
 
 Built jars are output to `build/libs/`.
 
+## Publishing
+
+GitHub Actions builds pushes and pull requests. Publishing a GitHub Release with
+a tag matching `mod_version` (for example, `v1.0.0`) builds and uploads the mod to
+Modrinth, CurseForge, and GitHub Releases.
+
+See [`docs/publishing.md`](docs/publishing.md) for repository variables, API token
+setup, prereleases, and recovery from failed uploads.
+
 ## License
 
 This project is available under the CC0 license.

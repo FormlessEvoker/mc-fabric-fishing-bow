@@ -1,0 +1,132 @@
+name: release
+
+on:
+  release:
+    types: [published]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: release-${{ github.event.release.tag_name }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
+      minecraft: ${{ steps.metadata.outputs.minecraft }}
+      channel: ${{ steps.metadata.outputs.channel }}
+      jar: ${{ steps.metadata.outputs.jar }}
+    steps:
+      - name: checkout release tag
+        uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+          persist-credentials: false
+      - name: validate release metadata
+        id: metadata
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from pathlib import Path
+
+          properties = {}
+          for line in Path('gradle.properties').read_text().splitlines():
+              line = line.strip()
+              if line and not line.startswith('#') and '=' in line:
+                  key, value = line.split('=', 1)
+                  properties[key.strip()] = value.strip()
+
+          version = properties['mod_version']
+          minecraft = properties['minecraft_version']
+          release = json.loads(Path(os.environ['GITHUB_EVENT_PATH']).read_text())['release']
+          if not re.fullmatch(r'\d+\.\d+\.\d+(?:-[A-Za-z0-9]+(?:[.-][A-Za-z0-9]+)*)?', version):
+              raise SystemExit('mod_version must be X.Y.Z with an optional prerelease suffix.')
+          if release['tag_name'] != f'v{version}':
+              raise SystemExit('Release tag must be v followed by mod_version from gradle.properties.')
+          if '-' in version and not release['prerelease']:
+              raise SystemExit('Versions with a prerelease suffix must be marked as a GitHub prerelease.')
+          if not (release.get('body') or '').strip():
+              raise SystemExit('Add release notes to the GitHub Release before publishing.')
+          if not re.fullmatch(r'[A-Za-z0-9.+_-]+', minecraft):
+              raise SystemExit('minecraft_version must be one exact Minecraft version.')
+
+          channel = 'release'
+          if release['prerelease']:
+              channel = 'alpha' if re.search(r'-alpha(?:[.-]|$)', version) else 'beta'
+          with open(os.environ['GITHUB_OUTPUT'], 'a') as output:
+              output.write(f'version={version}\nminecraft={minecraft}\nchannel={channel}\n')
+              output.write(f'jar=fishing-bow-{version}.jar\n')
+          PY
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'temurin'
+      - name: setup gradle
+        uses: gradle/actions/setup-gradle@v6
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build release
+        run: ./gradlew build --no-daemon
+      - name: save installable jar
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-jar
+          path: build/libs/${{ steps.metadata.outputs.jar }}
+          if-no-files-found: error
+
+  publish:
+    needs: build
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - name: check publishing configuration
+        env:
+          MODRINTH_PROJECT_ID: ${{ vars.MODRINTH_PROJECT_ID }}
+          CURSEFORGE_PROJECT_ID: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          MODRINTH_TOKEN: ${{ secrets.MODRINTH_TOKEN }}
+          CURSEFORGE_TOKEN: ${{ secrets.CURSEFORGE_TOKEN }}
+        run: |
+          missing=0
+          for setting in MODRINTH_PROJECT_ID CURSEFORGE_PROJECT_ID MODRINTH_TOKEN CURSEFORGE_TOKEN; do
+            if [[ -z "${!setting}" ]]; then
+              echo "::error::Missing repository setting: $setting"
+              missing=1
+            fi
+          done
+          exit "$missing"
+      - name: download release jar
+        uses: actions/download-artifact@v8
+        with:
+          name: release-jar
+          path: build/libs
+      - name: publish to Modrinth, CurseForge, and GitHub
+        uses: Kira-NT/mc-publish@v3.3.1
+        with:
+          modrinth-id: ${{ vars.MODRINTH_PROJECT_ID }}
+          modrinth-token: ${{ secrets.MODRINTH_TOKEN }}
+          curseforge-id: ${{ vars.CURSEFORGE_PROJECT_ID }}
+          curseforge-token: ${{ secrets.CURSEFORGE_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          github-tag: ${{ github.event.release.tag_name }}
+          name: ${{ github.event.release.name || github.event.release.tag_name }}
+          version: ${{ needs.build.outputs.version }}
+          version-type: ${{ needs.build.outputs.channel }}
+          changelog: ${{ github.event.release.body }}
+          files: build/libs/${{ needs.build.outputs.jar }}
+          loaders: fabric
+          environment: client | server
+          game-versions: ${{ needs.build.outputs.minecraft }}
+          game-version-filter: none
+          java: '25'
+          dependencies: |
+            fabric-api(required){modrinth:P7dR8mSH}{curseforge:306612}#(ignore:github)
+          fail-mode: fail
