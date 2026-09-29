@@ -43,13 +43,17 @@ public final class FishingBowClientConfig {
         try {
             Files.createDirectories(configFile.getParent());
             if (Files.exists(configFile)) {
+                // Parse into a separate object so a file that fails partway through leaves every value at its default.
+                Properties loaded = new Properties();
                 try (Reader reader = Files.newBufferedReader(configFile, StandardCharsets.UTF_8)) {
-                    properties.load(reader);
+                    loaded.load(reader);
                 }
+                properties.putAll(loaded);
             } else {
                 writeDefaults(configFile, properties);
             }
-        } catch (IOException exception) {
+        } catch (IOException | IllegalArgumentException exception) {
+            // IllegalArgumentException: Properties.load rejects a malformed Unicode escape.
             FishingBow.LOGGER.warn("Could not load client config {}; using defaults", configFile, exception);
         }
 

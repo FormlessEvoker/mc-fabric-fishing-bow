@@ -196,8 +196,13 @@ public final class ActiveFishingShot {
         Vec3 delta = destination.subtract(entity.position());
         double distance = delta.length();
         if (distance <= FishingBowConfig.arrivalDistance) return true;
-        entity.setDeltaMovement(entity.getDeltaMovement().scale(FishingBowConfig.drag)
-                .add(delta.scale(FishingBowConfig.pullStrength / distance)));
+        Vec3 velocity = entity.getDeltaMovement().scale(FishingBowConfig.drag)
+                .add(delta.scale(FishingBowConfig.pullStrength / distance));
+        // Never move farther than the remaining distance in one tick. A strong pull with little drag could
+        // otherwise jump past the arrival radius every tick, oscillating around the player and never arriving.
+        double speed = velocity.length();
+        if (speed > distance) velocity = velocity.scale(distance / speed);
+        entity.setDeltaMovement(velocity);
         entity.hurtMarked = true;
         return false;
     }
